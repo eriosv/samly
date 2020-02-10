@@ -33,6 +33,7 @@ defmodule Samly.IdpData do
             fingerprints: [],
             esaml_idp_rec: Esaml.esaml_idp_metadata(),
             esaml_sp_rec: Esaml.esaml_sp(),
+            idp_entry_list: [],
             valid?: false
 
   @type t :: %__MODULE__{
@@ -59,6 +60,7 @@ defmodule Samly.IdpData do
           fingerprints: [binary()],
           esaml_idp_rec: :esaml_idp_metadata,
           esaml_sp_rec: :esaml_sp,
+          idp_entry_list: [[binary()]],
           valid?: boolean()
         }
 
@@ -110,6 +112,7 @@ defmodule Samly.IdpData do
        when is_binary(id) and is_binary(sp_id) do
     %IdpData{idp_data | id: id, sp_id: sp_id, base_url: Map.get(opts_map, :base_url)}
     |> set_metadata_file(opts_map)
+    |> set_idp_entry_list(opts_map)
     |> set_pipeline(opts_map)
     |> set_allowed_target_urls(opts_map)
     |> set_boolean_attr(opts_map, :use_redirect_for_req)
@@ -185,6 +188,18 @@ defmodule Samly.IdpData do
   @spec set_metadata_file(%IdpData{}, map()) :: %IdpData{}
   defp set_metadata_file(%IdpData{} = idp_data, %{} = opts_map) do
     %IdpData{idp_data | metadata_file: Map.get(opts_map, :metadata_file, @default_metadata_file)}
+  end
+
+  @spec set_idp_entry_list(%IdpData{}, map()) :: %IdpData{}
+  defp set_idp_entry_list(%IdpData{} = idp_data, %{} = opts_map) do
+    %IdpData{idp_data | idp_entry_list:
+      opts_map
+      |> Map.get(:idp_entry_list, [])
+      |> idp_entry_list_to_charlist}
+  end
+
+  defp idp_entry_list_to_charlist(idp_entry_list) do
+    Enum.map(idp_entry_list, fn(attributes_list) -> Enum.map(attributes_list, fn({k,v})-> {to_charlist(k),to_charlist(v)} end) end)
   end
 
   @spec set_pipeline(%IdpData{}, map()) :: %IdpData{}
